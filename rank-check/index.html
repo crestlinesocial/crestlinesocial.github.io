@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YouTube rank check: where does a video rank for a keyword? | Crestline Social</title>
+<meta name="description" content="Free YouTube rank check: paste a video URL and a keyword to see where it ranks in a signed-out YouTube search in 33 countries, plus the top results. No login.">
+<link rel="canonical" href="https://crestlinesocial.github.io/rank-check/">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="site"><div class="wrap">
+  <a class="brand" href="/">Crestline Social</a>
+  <nav aria-label="Main">
+    <a href="/">Home</a>
+    <a href="/hashtags/">Hashtag data</a>
+    <a href="/rank-check/" aria-current="page">Rank check</a>
+    <a href="/free-youtube-views/">Free views guide</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>YouTube rank check</h1>
+  <p class="lede">Find where a video ranks in YouTube search for a keyword, in a given country. No account, no key.</p>
+
+  <div class="panel">
+    <form class="rank" id="rank-form" novalidate>
+      <label>Video URL
+        <input id="url" name="url" type="url" inputmode="url" autocomplete="off" required placeholder="https://www.youtube.com/watch?v=...">
+      </label>
+      <label>Keyword
+        <input id="keyword" name="keyword" type="text" autocomplete="off" required maxlength="120" placeholder="e.g. sourdough for beginners">
+      </label>
+      <label>Country
+        <select id="country" name="country">
+          <option value="US" selected>United States</option>
+          <option value="GB">United Kingdom</option>
+          <option value="CA">Canada</option>
+          <option value="AU">Australia</option>
+          <option value="IN">India</option>
+          <option value="DE">Germany</option>
+          <option value="FR">France</option>
+          <option value="BR">Brazil</option>
+          <option value="MX">Mexico</option>
+          <option value="ES">Spain</option>
+          <option value="IT">Italy</option>
+          <option value="NL">Netherlands</option>
+          <option value="JP">Japan</option>
+          <option value="KR">South Korea</option>
+          <option value="ID">Indonesia</option>
+          <option value="PH">Philippines</option>
+          <option value="PK">Pakistan</option>
+          <option value="NG">Nigeria</option>
+          <option value="ZA">South Africa</option>
+          <option value="TR">Turkey</option>
+          <option value="PL">Poland</option>
+          <option value="SE">Sweden</option>
+          <option value="AR">Argentina</option>
+          <option value="CO">Colombia</option>
+          <option value="VN">Vietnam</option>
+          <option value="TH">Thailand</option>
+          <option value="MY">Malaysia</option>
+          <option value="SA">Saudi Arabia</option>
+          <option value="AE">United Arab Emirates</option>
+          <option value="EG">Egypt</option>
+          <option value="BD">Bangladesh</option>
+          <option value="KE">Kenya</option>
+          <option value="NZ">New Zealand</option>
+        </select>
+      </label>
+      <button class="primary" id="submit" type="submit">Check rank</button>
+    </form>
+  </div>
+
+  <div id="out" aria-live="polite"></div>
+
+  <h2>How this works</h2>
+  <p>The check runs a signed-out YouTube search for your keyword from the country you pick and looks through roughly the top 100 results, videos and Shorts together. If your video is among them you get its position; if not, it is beyond the results checked. Signed-out results are not personalised, so they can differ from what you see when logged in. Results are cached briefly on the server, so checking the same video and keyword again within a short time returns the same answer.</p>
+  <p>Please keep it to a few checks a minute. The <a href="https://crestlinesocial.com/tools/youtube-rank-tracker/">full YouTube rank tracker</a> on crestlinesocial.com runs the same check. There is also a small command-line version in the <a href="https://github.com/crestlinesocial/youtube-hashtag-study">GitHub repository</a>.</p>
+</main>
+
+<footer class="site"><div class="wrap">
+  Crestline Social &middot; <a href="https://crestlinesocial.com/">crestlinesocial.com</a> &middot; data <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>
+</div></footer>
+
+<script>
+(function () {
+  var API = 'https://crestlinesocial.com/wp-json/gwa/v1/youtube';
+  var form = document.getElementById('rank-form'), out = document.getElementById('out'), btn = document.getElementById('submit');
+
+  function el(tag, text, cls) {
+    var e = document.createElement(tag);
+    if (text != null) e.textContent = text;
+    if (cls) e.className = cls;
+    return e;
+  }
+  function message(text, isError) {
+    out.textContent = '';
+    var p = el('p', text, isError ? 'error' : null);
+    var panel = el('div', null, 'panel'); panel.appendChild(p); out.appendChild(panel);
+  }
+  function looksLikeYouTube(u) {
+    return /^(https?:\/\/)?(www\.|m\.|music\.)?(youtube\.com\/(watch\?|shorts\/|live\/|embed\/)|youtu\.be\/)/i.test(u.trim());
+  }
+  function showResult(d) {
+    out.textContent = '';
+    var panel = el('div', null, 'panel');
+    var where = ' for “' + d.keyword + '” in ' + d.country;
+    if (d.rank) {
+      panel.appendChild(el('p', '#' + d.rank, 'result-rank'));
+      panel.appendChild(el('p', 'Position ' + d.rank + where + (d.in_shorts_shelf ? ' (in the Shorts shelf)' : '') + '.'));
+    } else {
+      panel.appendChild(el('p', 'Not in the results checked', 'result-rank'));
+      panel.appendChild(el('p', 'The video was not found in the first ' + (d.checked || 'roughly 100') + ' results' + where + '.'));
+    }
+    if (d.checked) panel.appendChild(el('p', d.checked + ' results checked in a signed-out search.', 'small'));
+    if (d.top && d.top.length) {
+      panel.appendChild(el('h2', 'Top results for this keyword'));
+      var ol = el('ol');
+      d.top.forEach(function (t) {
+        var li = el('li'), a = el('a', t.title);
+        a.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(t.id);
+        a.rel = 'nofollow noopener';
+        li.appendChild(a);
+        li.appendChild(document.createTextNode(' — ' + t.channel));
+        if (t.id === d.video_id) li.appendChild(el('strong', ' (your video)'));
+        if (t.position) li.value = t.position;
+        ol.appendChild(li);
+      });
+      panel.appendChild(ol);
+    }
+    out.appendChild(panel);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var url = document.getElementById('url').value.trim();
+    var keyword = document.getElementById('keyword').value.trim();
+    var country = document.getElementById('country').value;
+    if (!url || !keyword) { message('Please enter both a video URL and a keyword.', true); return; }
+    if (!looksLikeYouTube(url)) { message('That does not look like a YouTube video link. Paste a youtube.com/watch, /shorts/ or youtu.be link.', true); return; }
+
+    btn.disabled = true; btn.textContent = 'Checking…';
+    message('Searching YouTube. This usually takes a few seconds.');
+    var q = 'action=rank&url=' + encodeURIComponent(url) + '&keyword=' + encodeURIComponent(keyword) + '&country=' + encodeURIComponent(country);
+
+    fetch(API + '?' + q).then(function (r) {
+      if (r.status === 429) throw new Error('rate');
+      return r.json().catch(function () { throw new Error('bad'); }).then(function (d) {
+        if (d && d.error) throw new Error('api:' + d.error);
+        if (!r.ok) throw new Error('bad');
+        return d;
+      });
+    }).then(showResult).catch(function (err) {
+      var m = String(err && err.message || '');
+      if (m === 'rate') message('Too many checks in a short time. Please wait a minute and try again.', true);
+      else if (m.indexOf('api:') === 0) message('The check could not run: ' + m.slice(4), true);
+      else message('The check could not be completed right now. Please try again in a moment, or use the full rank tracker on crestlinesocial.com.', true);
+    }).then(function () {
+      setTimeout(function () { btn.disabled = false; btn.textContent = 'Check rank'; }, 3000);
+    });
+  });
+})();
+</script>
+</body>
+</html>

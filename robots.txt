@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://crestlinesocial.github.io/sitemap.xml
